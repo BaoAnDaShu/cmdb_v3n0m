@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资产管理 - CMDB系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/element-plus@2.4.0/dist/index.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.0/dist/index.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="auth.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+        .header {
+            background-color: #1989fa;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .user-name {
+            margin-right: 15px;
+        }
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .page-header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #303133;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .filter-area {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .filter-item {
+            display: flex;
+            align-items: center;
+            min-width: 180px;
+        }
+        .filter-label {
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+        .assets-table {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <div class="header">
+            <div class="header-title">CMDB资产管理系统</div>
+            <div class="user-info">
+                <span class="user-name">欢迎, {{ currentUser?.username }}</span>
+                <button class="logout-btn" @click="handleLogout">退出登录</button>
+            </div>
+        </div>
+        
+        <!-- 主要内容区域 -->
+        <div class="container">
+            <!-- 页面头部 -->
+            <div class="page-header">
+                <div class="page-title">资产管理</div>
+                <div class="header-actions">
+                    <el-button type="primary" @click="handleAddAsset">添加资产</el-button>
+                </div>
+            </div>
+            
+            <!-- 筛选区域 -->
+            <div class="filter-area">
+                <div class="filter-form">
+                    <div class="filter-item">
+                        <span class="filter-label">资产名称:</span>
+                        <el-input v-model="filters.name" placeholder="搜索资产名称" style="width: 150px;"></el-input>
+                    </div>
+                    <div class="filter-item">
+                        <span class="filter-label">资产类型:</span>
+                        <el-select v-model="filters.type" placeholder="选择资产类型" style="width: 150px;">
+                            <el-option label="服务器" value="server"></el-option>
+                            <el-option label="网络设备" value="network_device"></el-option>
+                            <el-option label="存储设备" value="storage"></el-option>
+                            <el-option label="安全设备" value="security_device"></el-option>
+                        </el-select>
+                    </div>
+                    <div class="filter-item">
+                        <span class="filter-label">部门:</span>
+                        <el-select v-model="filters.department" placeholder="选择部门" style="width: 150px;">
+                            <el-option v-for="dept in departments" :key="dept.id" :label="dept.name" :value="dept.id"></el-option>
+                        </el-select>
+                    </div>
+                    <div class="filter-item">
+                        <span class="filter-label">状态:</span>
+                        <el-select v-model="filters.status" placeholder="选择状态" style="width: 150px;">
+                            <el-option label="使用中" value="in_use"></el-option>
+                            <el-option label="闲置" value="idle"></el-option>
+                            <el-option label="维护中" value="maintenance"></el-option>
+                            <el-option label="报废" value="retired"></el-option>
+                        </el-select>
+                    </div>
+                    <div class="filter-item">
+                        <el-button type="primary" @click="handleSearch">搜索</el-button>
+                        <el-button @click="resetFilters">重置</el-button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 资产表格 -->
+            <div class="assets-table">
+                <el-table :data="filteredAssets" style="width: 100%">
+                    <el-table-column prop="id" label="资产ID" width="80"></el-table-column>
+                    <el-table-column prop="name" label="资产名称" width="180"></el-table-column>
+                    <el-table-column prop="type" label="资产类型" width="120">
+                        <template #default="scope">
+                            <el-tag :type="getTypeTagType(scope.row.type)">
+                                {{ getTypeLabel(scope.row.type) }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="ip_address" label="IP地址" width="150"></el-table-column>
+                    <el-table-column prop="hostname" label="主机名" width="150"></el-table-column>
+                    <el-table-column prop="department_name" label="所属部门" width="150"></el-table-column>
+                    <el-table-column prop="status" label="状态" width="120">
+                        <template #default="scope">
+                            <el-tag :type="getStatusTagType(scope.row.status)">
+                                {{ getStatusLabel(scope.row.status) }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="purchase_date" label="购买日期" width="150"></el-table-column>
+                    <el-table-column prop="location" label="位置" width="150"></el-table-column>
+                    <el-table-column label="操作" width="180" fixed="right">
+                        <template #default="scope">
+                            <el-button type="primary" size="small" @click="viewAssetDetails(scope.row)">详情</el-button>
+                            <el-button type="warning" size="small" @click="editAsset(scope.row)" data-permission="edit_assets">编辑</el-button>
+                            <el-button type="danger" size="small" @click="deleteAsset(scope.row)" data-permission="edit_assets">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                
+                <!-- 分页 -->
+                <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                    <el-pagination
+                        v-model:current-page="pagination.currentPage"
+                        v-model:page-size="pagination.pageSize"
+                        :page-sizes="[10, 20, 50, 100]"
+                        layout="total, sizes, prev, pager, next, jumper"
+                        :total="filteredAssets.length"
+                        @size-change="handleSizeChange"
+                        @current-change="handleCurrentChange"
+                    ></el-pagination>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 添加/编辑资产对话框 -->
+        <el-dialog
+            v-model="dialogVisible"
+            :title="isEditing ? '编辑资产' : '添加资产'"
+            width="600px"
+        >
+            <el-form :model="assetForm" :rules="rules" ref="assetFormRef">
+                <el-form-item label="资产名称" prop="name">
+                    <el-input v-model="assetForm.name" placeholder="请输入资产名称"></el-input>
+                </el-form-item>
+                <el-form-item label="资产类型" prop="type">
+                    <el-select v-model="assetForm.type" placeholder="请选择资产类型">
+                        <el-option label="服务器" value="server"></el-option>
+                        <el-option label="网络设备" value="network_device"></el-option>
+                        <el-option label="存储设备" value="storage"></el-option>
+                        <el-option label="安全设备" value="security_device"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="IP地址" prop="ip_address">
+                    <el-input v-model="assetForm.ip_address" placeholder="请输入IP地址"></el-input>
+                </el-form-item>
+                <el-form-item label="主机名">
+                    <el-input v-model="assetForm.hostname" placeholder="请输入主机名"></el-input>
+                </el-form-item>
+                <el-form-item label="所属部门" prop="department_id">
+                    <el-select v-model="assetForm.department_id" placeholder="请选择部门">
+                        <el-option v-for="dept in departments" :key="dept.id" :label="dept.name" :value="dept.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="状态" prop="status">
+                    <el-select v-model="assetForm.status" placeholder="请选择状态">
+                        <el-option label="使用中" value="in_use"></el-option>
+                        <el-option label="闲置" value="idle"></el-option>
+                        <el-option label="维护中" value="maintenance"></el-option>
+                        <el-option label="报废" value="retired"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="购买日期">
+                    <el-date-picker v-model="assetForm.purchase_date" type="date" placeholder="选择购买日期"></el-date-picker>
+                </el-form-item>
+                <el-form-item label="位置">
+                    <el-input v-model="assetForm.location" placeholder="请输入位置"></el-input>
+                </el-form-item>
+                <el-form-item label="备注">
+                    <el-input v-model="assetForm.description" type="textarea" placeholder="请输入备注信息"></el-input>
+                </el-form-item>
+            </el-form>
+            <div class="dialog-footer">
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="handleSaveAsset">保存</el-button>
+            </div>
+        </el-dialog>
+        
+        <!-- 资产详情对话框 -->
+        <el-dialog
+            v-model="detailDialogVisible"
+            title="资产详情"
+            width="700px"
+        >
+            <div v-if="currentAsset" class="asset-details">
+                <el-descriptions :column="2" border>
+                    <el-descriptions-item label="资产ID">{{ currentAsset.id }}</el-descriptions-item>
+                    <el-descriptions-item label="资产名称">{{ currentAsset.name }}</el-descriptions-item>
+                    <el-descriptions-item label="资产类型">{{ getTypeLabel(currentAsset.type) }}</el-descriptions-item>
+                    <el-descriptions-item label="状态">{{ getStatusLabel(currentAsset.status) }}</el-descriptions-item>
+                    <el-descriptions-item label="IP地址">{{ currentAsset.ip_address || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="主机名">{{ currentAsset.hostname || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="所属部门" :span="2">{{ currentAsset.department_name || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="购买日期">{{ currentAsset.purchase_date || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="位置">{{ currentAsset.location || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="备注" :span="2">{{ currentAsset.description || '-' }}</el-descriptions-item>
+                </el-descriptions>
+            </div>
+            <div class="dialog-footer">
+                <el-button @click="detailDialogVisible = false">关闭</el-button>
+            </div>
+        </el-dialog>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage, ElNotification, ElMessageBox } = ElementPlus;
+        
+        createApp({
+            data() {
+                return {
+                    currentUser: null,
+                    assets: [
+                        {
+                            id: 1,
+                            name: 'Web服务器01',
+                            type: 'server',
+                            ip_address: '192.168.1.101',
+                            hostname: 'web-server-01',
+                            department_id: 1,
+                            department_name: '技术部',
+                            status: 'in_use',
+                            purchase_date: '2023-01-15',
+                            location: '数据中心A区',
+                            description: '用于托管公司网站'
+                        },
+                        {
+                            id: 2,
+                            name: '数据库服务器01',
+                            type: 'server',
+                            ip_address: '192.168.1.102',
+                            hostname: 'db-server-01',
+                            department_id: 1,
+                            department_name: '技术部',
+                            status: 'in_use',
+                            purchase_date: '2023-03-20',
+                            location: '数据中心A区',
+                            description: '主数据库服务器'
+                        },
+                        {
+                            id: 3,
+                            name: '核心交换机01',
+                            type: 'network_device',
+                            ip_address: '192.168.1.1',
+                            hostname: 'core-switch-01',
+                            department_id: 1,
+                            department_name: '技术部',
+                            status: 'in_use',
+                            purchase_date: '2022-11-10',
+                            location: '数据中心B区',
+                            description: '核心网络设备'
+                        }
+                    ],
+                    departments: [
+                        { id: 1, name: '技术部' },
+                        { id: 2, name: '财务部' },
+                        { id: 3, name: '市场部' },
+                        { id: 4, name: '人力资源部' }
+                    ],
+                    filters: {
+                        name: '',
+                        type: '',
+                        department: '',
+                        status: ''
+                    },
+                    pagination: {
+                        currentPage: 1,
+                        pageSize: 10
+                    },
+                    dialogVisible: false,
+                    detailDialogVisible: false,
+                    isEditing: false,
+                    currentAsset: null,
+                    assetForm: {
+                        name: '',
+                        type: '',
+                        ip_address: '',
+                        hostname: '',
+                        department_id: '',
+                        status: 'in_use',
+                        purchase_date: '',
+                        location: '',
+                        description: ''
+                    },
+                    rules: {
+                        name: [{ required: true, message: '请输入资产名称', trigger: 'blur' }],
+                        type: [{ required: true, message: '请选择资产类型', trigger: 'change' }],
+                        department_id: [{ required: true, message: '请选择所属部门', trigger: 'change' }],
+                        status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+                    }
+                }
+            },
+            computed: {
+                filteredAssets() {
+                    let result = [...this.assets];
+                    
+                    // 应用筛选条件
+                    if (this.filters.name) {
+                        result = result.filter(item => 
+                            item.name.toLowerCase().includes(this.filters.name.toLowerCase())
+                        );
+                    }
+                    if (this.filters.type) {
+                        result = result.filter(item => item.type === this.filters.type);
+                    }
+                    if (this.filters.department) {
+                        result = result.filter(item => item.department_id === this.filters.department);
+                    }
+                    if (this.filters.status) {
+                        result = result.filter(item => item.status === this.filters.status);
+                    }
+                    
+                    return result;
+                }
+            },
+            mounted() {
+                // 检查用户认证
+                this.checkAuth();
+                // 获取当前用户信息
+                this.getCurrentUserInfo();
+                // 应用权限控制
+                this.applyPermissions();
+            },
+            methods: {
+                checkAuth() {
+                    // 检查用户是否已登录
+                    if (typeof authService !== 'undefined' && !authService.isAuthenticated()) {
+                        window.location.href = '/login.html';
+                    }
+                },
+                getCurrentUserInfo() {
+                    // 获取当前用户信息
+                    if (typeof authService !== 'undefined') {
+                        this.currentUser = authService.getCurrentUser();
+                    } else {
+                        // 模拟当前用户信息
+                        this.currentUser = {
+                            username: 'admin',
+                            role: 'admin'
+                        };
+                    }
+                },
+                handleLogout() {
+                    // 处理退出登录
+                    if (typeof authService !== 'undefined') {
+                        authService.logout();
+                    } else {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/login.html';
+                    }
+                },
+                handleSearch() {
+                    // 重置分页
+                    this.pagination.currentPage = 1;
+                    ElMessage({ message: '筛选条件已应用', type: 'success' });
+                },
+                resetFilters() {
+                    // 重置筛选条件
+                    this.filters = {
+                        name: '',
+                        type: '',
+                        department: '',
+                        status: ''
+                    };
+                    this.pagination.currentPage = 1;
+                },
+                handleSizeChange(size) {
+                    this.pagination.pageSize = size;
+                },
+                handleCurrentChange(current) {
+                    this.pagination.currentPage = current;
+                },
+                handleAddAsset() {
+                    // 重置表单
+                    this.assetForm = {
+                        name: '',
+                        type: '',
+                        ip_address: '',
+                        hostname: '',
+                        department_id: '',
+                        status: 'in_use',
+                        purchase_date: '',
+                        location: '',
+                        description: ''
+                    };
+                    this.isEditing = false;
+                    this.dialogVisible = true;
+                },
+                editAsset(asset) {
+                    // 编辑资产
+                    this.assetForm = { ...asset };
+                    this.isEditing = true;
+                    this.dialogVisible = true;
+                },
+                viewAssetDetails(asset) {
+                    // 查看资产详情
+                    this.currentAsset = { ...asset };
+                    this.detailDialogVisible = true;
+                },
+                async handleSaveAsset() {
+                    // 验证表单
+                    const formRef = this.$refs.assetFormRef;
+                    if (formRef) {
+                        formRef.validate(async (valid) => {
+                            if (valid) {
+                                try {
+                                    if (this.isEditing) {
+                                        // 更新资产
+                                        const index = this.assets.findIndex(item => item.id === this.assetForm.id);
+                                        if (index !== -1) {
+                                            // 获取部门名称
+                                            const dept = this.departments.find(d => d.id === this.assetForm.department_id);
+                                            this.assets[index] = {
+                                                ...this.assetForm,
+                                                department_name: dept ? dept.name : ''
+                                            };
+                                            ElNotification({
+                                                title: '成功',
+                                                message: '资产已更新',
+                                                type: 'success'
+                                            });
+                                        }
+                                    } else {
+                                        // 添加新资产
+                                        const newAsset = {
+                                            ...this.assetForm,
+                                            id: Date.now(), // 临时ID，实际应从后端获取
+                                            department_name: this.departments.find(d => d.id === this.assetForm.department_id)?.name || ''
+                                        };
+                                        this.assets.unshift(newAsset);
+                                        ElNotification({
+                                            title: '成功',
+                                            message: '资产已添加',
+                                            type: 'success'
+                                        });
+                                    }
+                                    this.dialogVisible = false;
+                                } catch (error) {
+                                    ElMessage.error('保存失败: ' + (error.message || '未知错误'));
+                                }
+                            }
+                        });
+                    }
+                },
+                async deleteAsset(asset) {
+                    // 删除资产
+                    ElMessageBox.confirm(
+                        `确定要删除资产「${asset.name}」吗？`,
+                        '删除确认',
+                        {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        }
+                    ).then(async () => {
+                        try {
+                            const index = this.assets.findIndex(item => item.id === asset.id);
+                            if (index !== -1) {
+                                this.assets.splice(index, 1);
+                                ElNotification({
+                                    title: '成功',
+                                    message: '资产已删除',
+                                    type: 'success'
+                                });
+                            }
+                        } catch (error) {
+                            ElMessage.error('删除失败: ' + (error.message || '未知错误'));
+                        }
+                    }).catch(() => {
+                        // 用户取消删除
+                    });
+                },
+                getTypeLabel(type) {
+                    const typeMap = {
+                        'server': '服务器',
+                        'network_device': '网络设备',
+                        'storage': '存储设备',
+                        'security_device': '安全设备'
+                    };
+                    return typeMap[type] || type;
+                },
+                getTypeTagType(type) {
+                    const typeMap = {
+                        'server': 'primary',
+                        'network_device': 'success',
+                        'storage': 'warning',
+                        'security_device': 'danger'
+                    };
+                    return typeMap[type] || 'info';
+                },
+                getStatusLabel(status) {
+                    const statusMap = {
+                        'in_use': '使用中',
+                        'idle': '闲置',
+                        'maintenance': '维护中',
+                        'retired': '报废'
+                    };
+                    return statusMap[status] || status;
+                },
+                getStatusTagType(status) {
+                    const statusMap = {
+                        'in_use': 'success',
+                        'idle': 'warning',
+                        'maintenance': 'primary',
+                        'retired': 'danger'
+                    };
+                    return statusMap[status] || 'info';
+                },
+                applyPermissions() {
+                    // 简单的权限控制实现
+                    // 在实际项目中应使用auth.js中的authUtils.applyPermissions()
+                    if (typeof authService !== 'undefined') {
+                        // 应用权限控制
+                        document.querySelectorAll('[data-permission]').forEach(element => {
+                            const requiredPerm = element.getAttribute('data-permission');
+                            if (!authService.hasPermission(requiredPerm)) {
+                                element.style.display = 'none';
+                            }
+                        });
+                    }
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>
