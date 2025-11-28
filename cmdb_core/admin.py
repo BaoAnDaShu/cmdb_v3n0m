@@ -44,7 +44,17 @@ class ServiceAdmin(admin.ModelAdmin):
 
 @admin.register(Relationship)
 class RelationshipAdmin(admin.ModelAdmin):
-    list_display = ('source_type', 'source_id', 'relationship_type', 'target_type', 'target_id', 'created_at')
-    search_fields = ('source_type', 'target_type', 'relationship_type')
-    list_filter = ('relationship_type', 'source_type', 'target_type', 'created_at')
+    list_display = ('get_source_display', 'relationship_type', 'get_target_display', 'created_at')
+    search_fields = ('relationship_type',)
+    list_filter = ('relationship_type', 'created_at')
     ordering = ('created_at',)
+    
+    def get_source_display(self, obj):
+        """显示源资源信息"""
+        return f"{obj.source_content_type.model}: {obj.source_object_id}"
+    get_source_display.short_description = '源资源'
+    
+    def get_target_display(self, obj):
+        """显示目标资源信息"""
+        return f"{obj.target_content_type.model}: {obj.target_object_id}"
+    get_target_display.short_description = '目标资源'

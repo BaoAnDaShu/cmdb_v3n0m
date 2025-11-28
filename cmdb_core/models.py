@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
 
@@ -11,6 +13,9 @@ class Department(models.Model):
     description = models.TextField(blank=True, verbose_name='部门描述')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    # 添加通用关系
+    relationships_as_source = GenericRelation('Relationship', related_query_name='source')
+    relationships_as_target = GenericRelation('Relationship', related_query_name='target')
 
     def __str__(self):
         return self.name
@@ -43,6 +48,9 @@ class Server(models.Model):
     description = models.TextField(blank=True, verbose_name='服务器描述')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    # 添加通用关系
+    relationships_as_source = GenericRelation('Relationship', related_query_name='source')
+    relationships_as_target = GenericRelation('Relationship', related_query_name='target')
 
     def __str__(self):
         return self.name
@@ -73,6 +81,9 @@ class NetworkDevice(models.Model):
     description = models.TextField(blank=True, verbose_name='设备描述')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    # 添加通用关系
+    relationships_as_source = GenericRelation('Relationship', related_query_name='source')
+    relationships_as_target = GenericRelation('Relationship', related_query_name='target')
 
     def __str__(self):
         return self.name
@@ -91,6 +102,9 @@ class Application(models.Model):
     owner = models.CharField(max_length=100, blank=True, verbose_name='应用负责人')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    # 添加通用关系
+    relationships_as_source = GenericRelation('Relationship', related_query_name='source')
+    relationships_as_target = GenericRelation('Relationship', related_query_name='target')
 
     def __str__(self):
         return f"{self.name} ({self.version})"
@@ -116,6 +130,9 @@ class Service(models.Model):
     description = models.TextField(blank=True, verbose_name='服务描述')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    # 添加通用关系
+    relationships_as_source = GenericRelation('Relationship', related_query_name='source')
+    relationships_as_target = GenericRelation('Relationship', related_query_name='target')
 
     def __str__(self):
         return self.name
@@ -134,17 +151,22 @@ class Relationship(models.Model):
         ('belongs_to', '属于'),
         ('manages', '管理'),
     )
-    source_type = models.CharField(max_length=50, verbose_name='源资源类型')
-    source_id = models.IntegerField(verbose_name='源资源ID')
-    target_type = models.CharField(max_length=50, verbose_name='目标资源类型')
-    target_id = models.IntegerField(verbose_name='目标资源ID')
+    # 使用ContentType框架替代字符串类型
+    source_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='source_relationships')
+    source_object_id = models.PositiveIntegerField()
+    source = GenericForeignKey('source_content_type', 'source_object_id')
+    
+    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='target_relationships')
+    target_object_id = models.PositiveIntegerField()
+    target = GenericForeignKey('target_content_type', 'target_object_id')
+    
     relationship_type = models.CharField(max_length=20, choices=RELATIONSHIP_TYPES, verbose_name='关系类型')
     description = models.TextField(blank=True, verbose_name='关系描述')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
 
     def __str__(self):
-        return f"{self.source_type}:{self.source_id} {self.relationship_type} {self.target_type}:{self.target_id}"
+        return f"{self.source} {self.relationship_type} {self.target}"
 
     class Meta:
         verbose_name = '资源关系'
