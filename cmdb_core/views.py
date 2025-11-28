@@ -6,14 +6,15 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
-from .models import Department, Server, NetworkDevice, Application, Service, Relationship
+from .models import Department, Server, NetworkDevice, Application, Service, Relationship, ClusterTemplate
 from .serializers import (
     DepartmentSerializer,
     ServerSerializer,
     NetworkDeviceSerializer,
     ApplicationSerializer,
     ServiceSerializer,
-    RelationshipSerializer
+    RelationshipSerializer,
+    ClusterTemplateSerializer
 )
 
 
@@ -80,6 +81,17 @@ class RelationshipViewSet(viewsets.ModelViewSet):
     search_fields = ['relationship_type']
     ordering_fields = ['created_at', 'updated_at']
     ordering = ['created_at']
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+
+class ClusterTemplateViewSet(viewsets.ModelViewSet):
+    """集群模板视图集"""
+    queryset = ClusterTemplate.objects.all()
+    serializer_class = ClusterTemplateSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'description', 'created_by']
+    ordering_fields = ['name', 'created_at', 'updated_at']
+    ordering = ['name']
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 

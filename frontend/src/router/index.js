@@ -7,6 +7,12 @@ import ServiceList from '../views/ServiceList.vue'
 import DepartmentList from '../views/DepartmentList.vue'
 import UserList from '../views/UserList.vue'
 import ModelManagement from '../views/ModelManagement.vue'
+import ServiceTemplate from '../views/ServiceTemplate.vue'
+import ClusterTemplate from '../views/ClusterTemplate.vue'
+import ServiceCategory from '../views/ServiceCategory.vue'
+import HostAutoApply from '../views/HostAutoApply.vue'
+import DynamicGroup from '../views/DynamicGroup.vue'
+import CustomField from '../views/CustomField.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 
@@ -69,6 +75,42 @@ const routes = [
     path: '/model-management',
     name: 'model-management',
     component: ModelManagement,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/service-template',
+    name: 'service-template',
+    component: ServiceTemplate,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/cluster-template',
+    name: 'cluster-template',
+    component: ClusterTemplate,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/service-category',
+    name: 'service-category',
+    component: ServiceCategory,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/host-auto-apply',
+    name: 'host-auto-apply',
+    component: HostAutoApply,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/dynamic-group',
+    name: 'dynamic-group',
+    component: DynamicGroup,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/custom-field',
+    name: 'custom-field',
+    component: CustomField,
     meta: { requiresAuth: true }
   }
 ]

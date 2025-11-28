@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
-from .models import Department, Server, NetworkDevice, Application, Service, Relationship
+from .models import Department, Server, NetworkDevice, Application, Service, Relationship, ClusterTemplate
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -144,3 +144,14 @@ class RelationshipSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class ClusterTemplateSerializer(serializers.ModelSerializer):
+    """集群模板序列化器"""
+    
+    class Meta:
+        model = ClusterTemplate
+        fields = [
+            'id', 'name', 'description', 'created_by', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ('created_at', 'updated_at', 'created_by')

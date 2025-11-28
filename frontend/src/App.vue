@@ -30,26 +30,26 @@
       <div class="app-body">
         <nav class="sidebar">
           <ul class="menu">
-            <li class="menu-item" :class="{ active: $route.name === 'dashboard' }" @click="$router.push('/')">
-              <i class="fas fa-tachometer-alt"></i> 仪表盘
-            </li>
-            <li class="menu-item" :class="{ active: $route.name === 'servers' }" @click="$router.push('/servers')">
-              <i class="fas fa-server"></i> 服务器列表
-            </li>
-            <li class="menu-item" :class="{ active: $route.name === 'network-devices' }" @click="$router.push('/network-devices')">
-              <i class="fas fa-network-wired"></i> 网络设备
-            </li>
-            <li class="menu-item" :class="{ active: $route.name === 'applications' }" @click="$router.push('/applications')">
-              <i class="fas fa-cubes"></i> 应用管理
-            </li>
-            <li class="menu-item" :class="{ active: $route.name === 'services' }" @click="$router.push('/services')">
-              <i class="fas fa-cog"></i> 服务管理
-            </li>
             <li class="menu-item" :class="{ active: $route.name === 'departments' }" @click="$router.push('/departments')">
-              <i class="fas fa-sitemap"></i> 部门管理
+              <i class="fas fa-sitemap"></i> 业务拓扑
             </li>
-            <li class="menu-item" :class="{ active: $route.name === 'users' }" @click="$router.push('/users')">
-              <i class="fas fa-users"></i> 用户管理
+            <li class="menu-item" :class="{ active: $route.name === 'service-template' }" @click="handleMenuClick('service-template')">
+              <i class="fas fa-layer-group"></i> 服务模板
+            </li>
+            <li class="menu-item" :class="{ active: $route.name === 'cluster-template' }" @click="handleMenuClick('cluster-template')">
+              <i class="fas fa-project-diagram"></i> 集群模板
+            </li>
+            <li class="menu-item" :class="{ active: $route.name === 'service-category' }" @click="handleMenuClick('service-category')">
+              <i class="fas fa-tags"></i> 服务分类
+            </li>
+            <li class="menu-item" :class="{ active: $route.name === 'host-auto-apply' }" @click="handleMenuClick('host-auto-apply')">
+              <i class="fas fa-robot"></i> 主机自动应用
+            </li>
+            <li class="menu-item" :class="{ active: $route.name === 'dynamic-group' }" @click="handleMenuClick('dynamic-group')">
+              <i class="fas fa-random"></i> 动态分组
+            </li>
+            <li class="menu-item" :class="{ active: $route.name === 'custom-field' }" @click="handleMenuClick('custom-field')">
+              <i class="fas fa-sliders-h"></i> 自定义字段
             </li>
           </ul>
         </nav>
@@ -74,6 +74,35 @@ export default {
     isAuthPage() {
       // 判断当前页面是否是登录或注册页面
       return ['login', 'register'].includes(this.$route.name)
+    }
+  },
+  methods: {
+    handleMenuClick(menuType) {
+      // 处理菜单项点击事件
+      console.log('点击了菜单项:', menuType)
+      // 根据menuType跳转到对应的路由
+      switch(menuType) {
+        case 'service-template':
+          this.$router.push('/service-template')
+          break
+        case 'cluster-template':
+          this.$router.push('/cluster-template')
+          break
+        case 'service-category':
+          this.$router.push('/service-category')
+          break
+        case 'host-auto-apply':
+          this.$router.push('/host-auto-apply')
+          break
+        case 'dynamic-group':
+          this.$router.push('/dynamic-group')
+          break
+        case 'custom-field':
+          this.$router.push('/custom-field')
+          break
+        default:
+          break
+      }
     }
   }
 }
@@ -262,7 +291,7 @@ a:hover {
 .menu-item.active {
   background-color: #1989fa;
   color: #ffffff;
-  border-left-color: #ffffff;
+  border-left-color: transparent;
 }
 
 .menu-item i {

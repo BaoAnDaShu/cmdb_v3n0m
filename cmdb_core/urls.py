@@ -7,6 +7,7 @@ from .views import (
     ApplicationViewSet,
     ServiceViewSet,
     RelationshipViewSet,
+    ClusterTemplateViewSet,
     login,
     register,
     get_user_info,
@@ -23,6 +24,7 @@ router.register(r'network-devices', NetworkDeviceViewSet, basename='network-devi
 router.register(r'applications', ApplicationViewSet, basename='application')
 router.register(r'services', ServiceViewSet, basename='service')
 router.register(r'relationships', RelationshipViewSet, basename='relationship')
+router.register(r'cluster-templates', ClusterTemplateViewSet, basename='cluster-template')
 
 # API路由
 urlpatterns = [

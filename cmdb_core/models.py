@@ -171,3 +171,19 @@ class Relationship(models.Model):
     class Meta:
         verbose_name = '资源关系'
         verbose_name_plural = '资源关系管理'
+
+
+class ClusterTemplate(models.Model):
+    """集群模板模型"""
+    name = models.CharField(max_length=100, verbose_name='模板名称')
+    description = models.TextField(blank=True, verbose_name='模板描述')
+    created_by = models.CharField(max_length=100, default='admin', verbose_name='创建人')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='修改时间')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = '集群模板'
+        verbose_name_plural = '集群模板管理'
